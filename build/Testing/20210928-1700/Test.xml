@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="Darwin-c++"
+	BuildStamp="20210928-1700-Experimental"
+	Name="pc-140-116.customer.ask4.lan"
+	Generator="ctest-3.21.2"
+	CompilerName="/Library/Developer/CommandLineTools/usr/bin/c++"
+	CompilerVersion="12.0.0.12000032"
+	OSName="Mac OS X"
+	Hostname="manmantoudeMacBook-Pro.local"
+	OSRelease="10.15.7"
+	OSVersion="19H1217"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="158"
+	ProcessorCacheSize="32768"
+	NumberOfLogicalCPU="16"
+	NumberOfPhysicalCPU="8"
+	TotalVirtualMemory="3072"
+	TotalPhysicalMemory="16384"
+	LogicalProcessorsPerPhysical="8"
+	ProcessorClockFrequency="2300"
+	>
+	<Testing>
+		<StartDateTime>Sep 28 18:00 IST</StartDateTime>
+		<StartTestTime>1632848433</StartTestTime>
+		<TestList/>
+		<EndDateTime>Sep 28 18:00 IST</EndDateTime>
+		<EndTestTime>1632848433</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>
