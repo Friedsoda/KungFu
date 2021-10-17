@@ -1,15 +1,4 @@
-#include <glad.h>
-#include <GLFW/glfw3.h>
-
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.hpp>
-
-#include "Shader.h"
-#include "Camera.h"
-#include "Mesh.h"
-
-#include <iostream>
+#include "glheader.h"
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
