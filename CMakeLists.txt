@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(Lab1 VERSION 0.1.0)
 
 # Use c++11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Header
 set(GLAD_H ${PROJECT_SOURCE_DIR}/include)
@@ -25,6 +25,7 @@ add_executable(Lab  # 输出名为chess的可执行文件
    ./src/glad.c
    ./src/Camera.cpp
    ./src/Shader.cpp
+   ./src/stb_image.cpp
 )
 
 # Link the OpenGL framework in system
