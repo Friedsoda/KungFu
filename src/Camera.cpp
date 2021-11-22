@@ -48,3 +48,10 @@ void Camera::UpdateCameraPos()
 {
     Position += (Forward * speedZ + Right * speedX + Up * speedY) * KeySensitivity;
 }
+
+void Camera::SetCameraPos(glm::vec3 playerPos)
+{
+    if(fabs(Position.x - playerPos.x) > 2.7f){
+        Position.x = playerPos.x;
+    }
+}

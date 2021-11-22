@@ -29,6 +29,7 @@ public:
     glm::mat4 GetViewMatrix();
     void ProcessMouseMovement(float xOffset, float yOffset);
     void UpdateCameraPos();
+    void SetCameraPos(glm::vec3 playerPos);
     
 private:
     void UpdateCameraVectors();

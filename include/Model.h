@@ -1,3 +1,5 @@
+#pragma once
+
 #include "glheader.h"
 #include "Mesh.h"
 #include "stb_image.h"

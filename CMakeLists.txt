@@ -26,6 +26,14 @@ add_executable(Lab  # 输出名为chess的可执行文件
    ./src/Camera.cpp
    ./src/Shader.cpp
    ./src/stb_image.cpp
+   ./src/Player.cpp
+   ./src/imgui.cpp
+   ./src/imgui_widgets.cpp
+   ./src/imgui_tables.cpp
+   ./src/imgui_draw.cpp
+   ./src/imgui_demo.cpp
+   ./src/imgui_impl_glfw.cpp
+   ./src/imgui_impl_opengl3.cpp
 )
 
 # Link the OpenGL framework in system
