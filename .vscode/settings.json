@@ -5,7 +5,8 @@
         "iostream": "cpp",
         "iosfwd": "cpp",
         "chrono": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "__node_handle": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

@@ -6,6 +6,7 @@
 class Camera
 {
 public:
+    Camera();
     Camera(glm::vec3 position, glm::vec3 target, glm::vec3 worldup);
     Camera(glm::vec3 position, float pitch, float yaw, glm::vec3 worldup);
     ~Camera();
@@ -25,11 +26,12 @@ public:
     float speedZ = 0;
     float speedX = 0;
     float speedY = 0;
+    bool ifMoving;
     
     glm::mat4 GetViewMatrix();
     void ProcessMouseMovement(float xOffset, float yOffset);
     void UpdateCameraPos();
-    void SetCameraPos(glm::vec3 playerPos);
+    void MoveCamera(float step);
     
 private:
     void UpdateCameraVectors();

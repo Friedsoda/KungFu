@@ -27,6 +27,7 @@ add_executable(Lab  # 输出名为chess的可执行文件
    ./src/Shader.cpp
    ./src/stb_image.cpp
    ./src/Player.cpp
+   ./src/Npc.cpp
    ./src/imgui.cpp
    ./src/imgui_widgets.cpp
    ./src/imgui_tables.cpp

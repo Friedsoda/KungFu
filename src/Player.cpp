@@ -7,6 +7,7 @@ Player::Player()
     this->dir = true;
     this->ifJump = false;
     this->ifAttack = false;
+    this->ifFalling = false;
 }
 
 Player::~Player()
@@ -34,6 +35,11 @@ bool Player::ifPlayerAttacking()
     return this->ifAttack;
 }
 
+bool Player::ifPlayerFalling()
+{
+    return this->ifFalling;
+}
+
 void Player::updatePlayerPosition(float stepX, float stepY)
 {
     this->position.x = stepX;
@@ -53,4 +59,9 @@ void Player::updatePlayerJump(bool ifJump)
 void Player::updatePlayerAttack(bool ifAttack)
 {
     this->ifAttack = ifAttack;
+}
+
+void Player::gameOver()
+{
+    this->ifFalling = true;
 }

@@ -1,6 +1,7 @@
 #include "glheader.h"
 #include "Model.h"
 #include "Player.h"
+#include "Npc.h"
 
 // imgui
 #include "imgui.h"
@@ -15,24 +16,31 @@
 
 // Input 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void keyCallbackRestart(GLFWwindow* window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
+// Update camera position
+void updateCameraPos();
 // Calculate transform
-void calculatePlayerTransform(glm::vec4 & modelMat);
+void calculatePlayerTransform(glm::vec4& modelMat);
 void calculateObjectTransform(glm::mat4& modelMat);
-glm::mat4 calculateNpcTransform();
+float calculateNpcTransform(glm::vec4& modelMat);
 // Set shader
 void setPlayerShader(Shader & shader);
 void setObjectShader(Shader & shader);
 // Player actions
 void playerAttackZ();
 void playerJump();
+bool ifAttackValid();
+// Restart game
+void restartGame();
 
 const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 800;
 
 // Camera
-Camera camera(glm::vec3(0, 1.3f, 9.0f), glm::radians(-7.0f), glm::radians(180.0f), glm::vec3(0, 1.0f, 0));
+Camera* camera = new Camera(glm::vec3(0, 1.3f, 9.0f), glm::radians(-7.0f), glm::radians(180.0f), glm::vec3(0, 1.0f, 0));
+int movingCameraCount = 0;
 
 // Lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -42,8 +50,9 @@ float lastX;
 float lastY;
 bool firstMouse = true;
 
-// Player 
-Player player;
+// Player & Npc
+Player* player = new Player();
+vector<Npc> npc;
 
 // Player transform
 bool playerDir = true; 
@@ -67,6 +76,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         playerAttackZ();
     if (key == GLFW_KEY_UP && action == GLFW_PRESS)
         playerJump();
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        restartGame();
+}
+
+// Only the restart button available
+void keyCallbackRestart(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        restartGame();
 }
 
 // Process keyboard input
@@ -79,43 +97,43 @@ void processInput(GLFWwindow *window)
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        camera.speedZ = 1.0f;
+        camera->speedZ = 1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        camera.speedZ = -1.0f;
+        camera->speedZ = -1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        camera.speedX = -1.0f;
+        camera->speedX = -1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        camera.speedX = 1.0f;
+        camera->speedX = 1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
-        camera.speedY = -1.0f;
+        camera->speedY = -1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
-        camera.speedY = 1.0f;
+        camera->speedY = 1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
         stepX += 0.05f;
-        player.updatePlayerDirection(true);
+        player->updatePlayerDirection(true);
     }
     else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
     {
         stepX -= 0.05f;
-        player.updatePlayerDirection(false);
+        player->updatePlayerDirection(false);
     }
     else
     {
-        camera.speedX = 0;
-        camera.speedY = 0;
-        camera.speedZ = 0;
+        camera->speedX = 0;
+        camera->speedY = 0;
+        camera->speedZ = 0;
     }
 }
 
@@ -135,7 +153,33 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos)
     lastX = xPos;
     lastY = yPos;
     
-    camera.ProcessMouseMovement(xOffset, yOffset);
+    camera->ProcessMouseMovement(xOffset, yOffset);
+}
+
+// Move camera when player is on the edge
+void updateCameraPos()
+{
+    // start moving on the edge
+    if(fabs(camera->Position.x - player->getPlayerPosition().x) > 3.4f)
+    {
+        if(!camera->ifMoving)
+        {
+            movingCameraCount = 20;
+            camera->ifMoving = true;
+        }
+    }
+    // if moving, move 0.1f per frame
+    if(camera->ifMoving)
+    {
+        if((movingCameraCount--) > 0) 
+        {
+            camera->MoveCamera(camera->Position.x < player->getPlayerPosition().x? 0.17f : -0.17f);
+        }
+        if(movingCameraCount == 0)
+        {
+            camera->ifMoving = false;
+        }
+    }
 }
 
 // Calculate the model matrix of player
@@ -143,7 +187,7 @@ void calculatePlayerTransform(glm::mat4& modelMat)
 {
     // update player position
     // if player is jumping
-    if(player.ifPlayerJumping())
+    if(player->ifPlayerJumping())
     {
         if(jumpCount > 25){
             stepY += 0.03f;
@@ -152,18 +196,24 @@ void calculatePlayerTransform(glm::mat4& modelMat)
             stepY -= 0.03f;
             --jumpCount;
         } else {
-            player.updatePlayerJump(false);
+            player->updatePlayerJump(false);
             jumpCount = 50;
         }
     }
-    player.updatePlayerPosition(stepX, stepY);
+    player->updatePlayerPosition(stepX, stepY);
+
+    // if player move out of the ground, then the game is over
+    if(player->getPlayerPosition().x > 10.7f || player->getPlayerPosition().x < -10.7f)
+    {
+        player->gameOver();
+    }
 
     // translate
-    modelMat = glm::translate(glm::mat4(1.0f), player.getPlayerPosition());
+    modelMat = glm::translate(glm::mat4(1.0f), player->getPlayerPosition());
 
     // scale
     glm::vec3 scaleMatrix;
-    if (player.getPlayerDirection()) // going right
+    if (player->getPlayerDirection()) // going right
     {
         scaleMatrix = glm::vec3(0.2f, 0.2f, 0.2f);
     }
@@ -186,20 +236,22 @@ void calculateObjectTransform(glm::mat4& modelMat)
 }
 
 // Calculate the model matrix of npc
-glm::mat4 calculateNpcTransform()
+float calculateNpcTransform(glm::mat4& modelMat)
 {
+    float randomX = 1.0f + 0.1f * float(Randmod(5));
     // translate
-    glm::mat4 modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f + 0.1f * float(Randmod(5)),  0.09f,  0.0f));
+    modelMat = glm::translate(glm::mat4(1.0f), glm::vec3(randomX,  0.09f,  0.0f));
     // scale
     glm::vec3 scaleMatrix = glm::vec3(-0.2f, 0.2f, 0.2f);
     modelMat  = glm::scale(modelMat, scaleMatrix);
-    return modelMat;
+    // temp: return npc position X
+    return randomX;
 }
 
 void setPlayerShader(Shader & shader)
 {
     // MVP
-    shader.setVec3("viewPos", camera.Position);
+    shader.setVec3("viewPos", camera->Position);
     shader.setMat4("modelMat", modelMatPlayer);
     shader.setMat4("viewMat", viewMat);
     shader.setMat4("projMat", projMat);
@@ -213,7 +265,7 @@ void setPlayerShader(Shader & shader)
 void setObjectShader(Shader & shader)
 {
     // MVP
-    shader.setVec3("viewPos", camera.Position);
+    shader.setVec3("viewPos", camera->Position);
     shader.setMat4("modelMat", modelMatObject);
     shader.setMat4("viewMat", viewMat);
     shader.setMat4("projMat", projMat);
@@ -226,20 +278,74 @@ void setObjectShader(Shader & shader)
 
 void playerAttackZ()
 {
-    if(!player.ifPlayerAttacking())
+    // Calculate valid distance 
+    if(!ifAttackValid())
+        return;
+
+    // Attack
+    if(!player->ifPlayerAttacking())
     {
-        player.updatePlayerAttack(true);
+        player->updatePlayerAttack(true);
         attackCount++;
-        player.updatePlayerAttack(false);
+        player->updatePlayerAttack(false);
     }
 }
 
 void playerJump()
 {
-    if(!player.ifPlayerJumping())
+    if(!player->ifPlayerJumping())
     {
-        player.updatePlayerJump(true);
+        player->updatePlayerJump(true);
     }
+}
+
+bool ifAttackValid()
+{
+    float playerX = player->getPlayerPosition().x;
+    float npcX;
+    int attackNpc = -1;
+    // player must attack in the correct direction
+    if (player->getPlayerDirection() == true) // attack npc on his right side
+    {
+        float minDis = 100.0f;
+        for (int i = 0; i < npc.size(); i++)
+        {
+            npcX = npc[i].getNpcPosition().x;
+            if(npcX > playerX && npcX - playerX < minDis){
+                attackNpc = i;
+                minDis = npcX - playerX;
+            }
+        }
+        if(attackNpc != -1 && minDis < 0.3f)
+            return true;
+    } 
+    else  // attack npc on his left side
+    {
+        float minDis = 100.0f;
+        for (int i = 0; i < npc.size(); i++)
+        {
+            npcX = npc[i].getNpcPosition().x;
+            if(npcX < playerX && playerX - npcX < minDis){
+                attackNpc = i;
+                minDis = playerX - npcX;
+            }
+        }
+        if(attackNpc != -1 && minDis < 0.3f)
+            return true;
+    }
+    return false;
+}
+
+// Press R to restart game
+void restartGame()
+{
+    delete player;
+    delete camera;
+    player = new Player();
+    camera = new Camera();
+    stepX = 0.0f;
+    stepY = 0.09f;
+    attackCount = 0;
 }
 
 int main(int argc, const char *argv[])
@@ -285,15 +391,19 @@ int main(int argc, const char *argv[])
     // Load model
     Model character(filesystem::path("/Users/manmantou/Desktop/Study/TCD/ComputerGraphics/Lab1/src/Models/character1/character.obj"));
     Model ground(filesystem::path("/Users/manmantou/Desktop/Study/TCD/ComputerGraphics/Lab1/src/Models/ground/ground.obj"));
-    std::vector<Model> npc;
+    std::vector<Model> npcModels;
     for (int i = 0; i < 3; i++){
-        npc.push_back(Model(filesystem::path("/Users/manmantou/Desktop/Study/TCD/ComputerGraphics/Lab1/src/Models/character2/character2.obj")));
+        npcModels.push_back(Model(filesystem::path("/Users/manmantou/Desktop/Study/TCD/ComputerGraphics/Lab1/src/Models/character2/character2.obj")));
     }
 
     // Npc
-    for(int i = 0; i < npc.size(); i++)
+    for(int i = 0; i < npcModels.size(); i++)
     {
-        modelMatNpc.push_back(calculateNpcTransform());
+        modelMatNpc.push_back(glm::mat4(1.0f));
+        float npcPosX = calculateNpcTransform(modelMatNpc[i]);
+        Npc newNpc;
+        newNpc.updateNpcPosition(npcPosX, 0.09f);
+        npc.push_back(newNpc);
     }
 
     // Setup ImGui context
@@ -313,20 +423,29 @@ int main(int argc, const char *argv[])
         ImGui::NewFrame();
 
         ImGui::Begin("Debug");
-        ImGui::Text("Hello Kongfu");
-        ImGui::TextColored(ImVec4(1,1,0,1), "Player Action");
+        ImGui::TextColored(ImVec4(1,1,0,1), "Press Z to attack");
+        ImGui::TextColored(ImVec4(1,1,0,1), "Press R to restart the game");
         ImGui::BeginChild("Scrolling");
 
         // Input
-        processInput(window);
-        glfwSetKeyCallback(window, keyCallback);
+        if(!camera->ifMoving && !player->ifPlayerFalling())
+        {
+            processInput(window);
+            glfwSetKeyCallback(window, keyCallback);
+        }
+
+        if(player->ifPlayerFalling())
+        {
+            glfwSetKeyCallback(window, keyCallbackRestart);
+            stepY -= 0.14f;
+        }
 
         // Clear screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update camera position
-        viewMat = camera.GetViewMatrix();
+        viewMat = camera->GetViewMatrix();
         
         // Ground
         calculateObjectTransform(modelMatObject);
@@ -343,25 +462,27 @@ int main(int argc, const char *argv[])
         // Display attack info (temp)
         for (int i = 0; i < attackCount; i++)
         {
-            ImGui::Text("Attack~");
+            ImGui::Text("Attack!");
         }
 
         // Npc
-        for (int i = 0; i < npc.size(); i++)
+        for (int i = 0; i < npcModels.size(); i++)
         {
             objectShader.use();
             objectShader.setMat4("modelMat", modelMatNpc[i]);
-            npc[i].Draw(objectShader);
+            npcModels[i].Draw(objectShader);
         }
 
         ImGui::EndChild();
+        if (ImGui::Button("Clear"))
+            attackCount = 0;
         ImGui::End();
         ImGui::Render();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();
-        camera.SetCameraPos(player.getPlayerPosition());
+        updateCameraPos();
     }
 
     ImGui_ImplOpenGL3_Shutdown();
